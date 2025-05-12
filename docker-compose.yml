@@ -1,43 +1,5 @@
 services:
-  web-db2:
-    image: odoo:17.0
-    restart: unless-stopped
-    depends_on:
-      - db-db2
-    ports:
-      - "8070:8069"
-    volumes:
-      - odoo-web-data-db2:/var/lib/odoo
-      - ./config-db2:/etc/odoo
-      - ./addons-db2:/mnt/extra-addons
-    environment:
-      - HOST=db-db2
-      - USER=odoo
-      - PASSWORD=odoo
-    command: ["odoo", "--config", "/etc/odoo/odoo.conf"]
-  db-db2:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_PASSWORD=odoo
-      - POSTGRES_USER=odoo
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    volumes:
-      - odoo-db-data-db2:/var/lib/postgresql/data/pgdata
   mi_app_flask:
     image: my-flask-app  # Reemplaza con el nombre de tu imagen de Flask
     ports:
       - "5000:5000"        # Si tu app Flask expone el puerto 5000
-    depends_on:
-      - web-db2          # Asegura que Odoo esté corriendo antes que Flask
-    environment:
-      - ODOO_HOST=web-db2  # Usa el nombre del servicio de Odoo para conectar
-      - ODOO_PORT=8069
-      - ODOO_DB=ppg   # Ajusta si tu base de datos tiene otro nombre
-      - ODOO_USER=admin
-      - ODOO_PASSWORD=odooppg
-    # Puedes agregar aquí volúmenes o cualquier otra configuración necesaria para Flask
-volumes:
-  odoo-web-data-db2:
-  odoo-db-data-db2:
