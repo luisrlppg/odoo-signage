@@ -77,7 +77,7 @@ def carrusel():
         models, uid = connect_odoo()
         if not uid:
             return "Error de autenticación con Odoo", 500
-
+        
         manufacturing_orders = obtener_ordenes_activas(models, uid)
         if not manufacturing_orders:
             return "No hay órdenes de fabricación activas", 404
