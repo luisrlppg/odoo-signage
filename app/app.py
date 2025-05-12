@@ -8,15 +8,16 @@ import os
 app = Flask(__name__)
 
 # Configuración de Odoo
-ODOO_URL = 'http://192.168.1.160:8070/'
-ODOO_DB = 'ppg'
-ODOO_USERNAME = 'admin'
-ODOO_PASSWORD = 'odooppg'
+ODOO_HOST = os.environ.get('ODOO_HOST', 'localhost')
+ODOO_PORT = int(os.environ.get('ODOO_PORT', '8069'))
+ODOO_DB = os.environ.get('ODOO_DB', 'postgres')
+ODOO_USER = os.environ.get('ODOO_USER', 'odoo')
+ODOO_PASSWORD = os.environ.get('ODOO_PASSWORD', 'odoo')
 
 def connect_odoo():
-    common = xmlrpc.client.ServerProxy(f'{ODOO_URL}/xmlrpc/2/common')
-    models = xmlrpc.client.ServerProxy(f'{ODOO_URL}/xmlrpc/2/object')
-    uid = common.authenticate(ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, {})
+    common = xmlrpc.client.ServerProxy(f'http://{ODOO_HOST}:{ODOO_PORT}/xmlrpc/2/common')
+    models = xmlrpc.client.ServerProxy(f'http://{ODOO_HOST}:{ODOO_PORT}/xmlrpc/2/object')
+    uid = common.authenticate(ODOO_DB, ODOO_USER, ODOO_PASSWORD, {})
     return models, uid
 
 def obtener_ordenes_activas(models, uid):
