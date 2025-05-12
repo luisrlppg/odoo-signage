@@ -1,8 +1,5 @@
 services:
-  web:
-    build: .
+  mi_app_flask:
+    image: my-flask-app  # Reemplaza con el nombre de tu imagen de Flask
     ports:
-      - "5000:5000"
-    environment:
-      - FLASK_ENV=production
-    restart: unless-stopped
+      - "5000:5000"        # Si tu app Flask expone el puerto 5000
