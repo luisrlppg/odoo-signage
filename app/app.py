@@ -23,7 +23,7 @@ def obtener_ordenes_activas(models, uid):
     """Obtiene las órdenes de fabricación activas desde Odoo."""
     fields_mrp = ['name', 'product_id', 'product_qty', 'state', 'date_start']
     domain_mrp_active = [
-        ('state', 'in', ['confirmed', 'progress']),
+        ('state', 'in', ['confirmed','progress','to_close']),
         ('name', 'not like', 'SBC%')
     ]
     return models.execute_kw(
@@ -55,7 +55,7 @@ def get_manufac_totals(manufacturing_orders):
         cantidad = orden['product_qty']
         estado = orden['state']
 
-        if estado == 'confirmed':
+        if estado == 'confirmed' or estado == 'progress' or estado == 'to_close':
             id = producto_info[0]
 
             if id in total:
