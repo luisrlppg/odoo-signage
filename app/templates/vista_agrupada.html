@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="group-view">
+<div class="carousel">
     <div class="particles" id="particles"></div>
-    <div class="slides-container">
+    <div class="slides">
         {% for group in slides %}
-        <div class="slide-group {% if loop.first %}active{% endif %}">
-            <div class="cards-container">
+        <div class="slide {% if loop.first %}active{% endif %}">
+            <div class="group-container">
                 {% for item in group %}
                 <div class="group-card">
                     <div class="group-image">
@@ -17,8 +17,8 @@
                         {% endif %}
                     </div>
                     <div class="group-info">
-                        <h3 class="product-name">{{ item.name|truncate(30) }}</h3>
-                        <div class="product-quantity">{{ item.quantity }}</div>
+                        <h3>{{ item.name|truncate(25) }}</h3>
+                        <div class="quantity">{{ item.quantity }}</div>
                     </div>
                 </div>
                 {% endfor %}

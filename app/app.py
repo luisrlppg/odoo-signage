@@ -70,7 +70,7 @@ def format_quantity(quantity):
     """Formatea la cantidad con separadores de miles."""
     return "{:,.2f}".format(quantity).replace(",", "X").replace(".", ",").replace("X", ".")
 
-@app.route('/vista-agrupada')
+@app.route('/')
 def vista_agrupada():
     try:
         models, uid = connect_odoo()
@@ -104,35 +104,6 @@ def vista_agrupada():
         ]
 
         return render_template('vista_agrupada.html', slides=slides)
-
-    except Exception as e:
-        app.logger.error(f"Error al procesar las órdenes de fabricación: {e}")
-        return f"Error del servidor: {e}", 500
-
-@app.route('/')
-def carrusel():
-    try:
-        models, uid = connect_odoo()
-        if not uid:
-            return "Error de autenticación con Odoo", 500
-        
-        manufacturing_orders = obtener_ordenes_activas(models, uid)
-        if not manufacturing_orders:
-            return "No hay órdenes de fabricación activas", 404
-
-        total, names = get_manufac_totals(manufacturing_orders)
-        image_dict = obtener_imagenes_productos(models, uid, total.keys())
-
-        # Preparar los slides para la plantilla
-        slides = []
-        for pid in total.keys():
-            slides.append({
-                'name': names.get(pid, 'Producto sin nombre'),
-                'quantity': format_quantity(total[pid]),
-                'image': image_dict.get(pid, '')
-            })
-
-        return render_template('carrusel.html', slides=slides)
 
     except Exception as e:
         app.logger.error(f"Error al procesar las órdenes de fabricación: {e}")
