@@ -48,6 +48,16 @@ function initAutoAdvance() {
         slides[index].classList.add('active');
         slides[index].style.opacity = '1';
         currentIndex = index;
+        
+        // Actualiza el contador de diapositivas
+        updateSlideCounter(index);
+    }
+
+    function updateSlideCounter(index) {
+        const currentElements = document.querySelectorAll('.slide-counter .current');
+        currentElements.forEach(el => {
+            el.textContent = index + 1;
+        });
     }
 
     function nextSlide() {

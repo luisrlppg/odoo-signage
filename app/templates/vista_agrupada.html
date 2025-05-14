@@ -6,6 +6,14 @@
     <div class="slides">
         {% for group in slides %}
         <div class="slide {% if loop.first %}active{% endif %}">
+            <div class="slide-header">
+                <h1 class="title">Órdenes De Fabricación</h1>
+                <div class="slide-counter">
+                    <span class="current">{{ loop.index }}</span>
+                    <span class="separator">/</span>
+                    <span class="total">{{ loop.length }}</span>
+                </div>
+            </div>
             <div class="group-container">
                 {% for item in group %}
                 <div class="group-card">
