@@ -71,7 +71,7 @@ def format_quantity(quantity):
     return "{:,.2f}".format(quantity).replace(",", "X").replace(".", ",").replace("X", ".")
 
 @app.route('/')
-def carrusel():
+def vista_agrupada():
     try:
         models, uid = connect_odoo()
         if not uid:
@@ -84,16 +84,26 @@ def carrusel():
         total, names = get_manufac_totals(manufacturing_orders)
         image_dict = obtener_imagenes_productos(models, uid, total.keys())
 
-        # Preparar los slides para la plantilla
-        slides = []
-        for pid in total.keys():
-            slides.append({
+        # Ordenar por cantidad descendente
+        sorted_items = sorted(
+            [{
                 'name': names.get(pid, 'Producto sin nombre'),
                 'quantity': format_quantity(total[pid]),
-                'image': image_dict.get(pid, '')
-            })
+                'image': image_dict.get(pid, ''),
+                'pid': pid
+            } for pid in total.keys()],
+            key=lambda x: float(x['quantity'].replace('.', '').replace(',', '.')),
+            reverse=True
+        )
 
-        return render_template('carrusel.html', slides=slides)
+        # En la función vista_agrupada(), modifica la parte del agrupamiento:
+        group_size = 10  # Cambiado de 6 a 10
+        slides = [
+            sorted_items[i:i + group_size] 
+            for i in range(0, len(sorted_items), group_size)
+        ]
+
+        return render_template('vista_agrupada.html', slides=slides)
 
     except Exception as e:
         app.logger.error(f"Error al procesar las órdenes de fabricación: {e}")

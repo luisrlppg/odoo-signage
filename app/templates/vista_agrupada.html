@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="carousel">
+    <div class="particles" id="particles"></div>
+    <div class="slides">
+        {% for group in slides %}
+        <div class="slide {% if loop.first %}active{% endif %}">
+            <div class="slide-header">
+                <h1 class="title">Órdenes De Fabricación</h1>
+                <div class="slide-counter">
+                    <span class="current">{{ loop.index }}</span>
+                    <span class="separator">/</span>
+                    <span class="total">{{ loop.length }}</span>
+                </div>
+            </div>
+            <div class="group-container">
+                {% for item in group %}
+                <div class="group-card">
+                    <div class="group-image">
+                        {% if item.image %}
+                        <img src="data:image/png;base64,{{ item.image }}" alt="{{ item.name }}">
+                        {% else %}
+                        <div class="no-image">Sin imagen</div>
+                        {% endif %}
+                    </div>
+                    <div class="group-info">
+                        <h3>{{ item.name|truncate(25) }}</h3>
+                        <div class="quantity">{{ item.quantity }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

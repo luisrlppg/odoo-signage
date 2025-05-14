@@ -1,10 +1,9 @@
-// Configuración del carrusel
-const slides = document.querySelector('.slides');
-const slideItems = document.querySelectorAll('.slide');
-let currentIndex = 0;
-const intervalTime = 6000;
+document.addEventListener('DOMContentLoaded', () => {
+    createParticles();
+    initAutoAdvance();
+});
 
-// Efecto de partículas
+// Función de partículas (mantener igual)
 function createParticles() {
     const particlesContainer = document.getElementById('particles');
     const particleCount = 50;
@@ -30,36 +29,43 @@ function createParticles() {
     }
 }
 
-function nextSlide() {
-    slideItems[currentIndex].classList.remove('active');
-    currentIndex = (currentIndex + 1) % slideItems.length;
-    slideItems[currentIndex].classList.add('active');
+function initAutoAdvance() {
+    const slides = document.querySelectorAll('.slide');
+    const slideCount = slides.length;
+    let currentIndex = 0;
+    const intervalTime = 10000; // 10 segundos por slide
     
-    slideItems.forEach((slide, index) => {
-        const offset = (index - currentIndex) * 100;
-        const scale = index === currentIndex ? 1 : 0.9;
-        const opacity = index === currentIndex ? 1 : 0.7;
-        const zIndex = index === currentIndex ? 1 : 0;
-        
-        slide.style.transform = `translateX(${offset}%) scale(${scale})`;
-        slide.style.opacity = opacity;
-        slide.style.zIndex = zIndex;
-    });
-}
+    if (slideCount <= 1) return; // No necesita avanzar si hay solo 1 slide
 
-document.addEventListener('DOMContentLoaded', () => {
-    createParticles();
-    setInterval(nextSlide, intervalTime);
-    
-    // Configuración inicial
-    slideItems.forEach((slide, index) => {
-        const offset = (index - currentIndex) * 100;
-        const scale = index === currentIndex ? 1 : 0.9;
-        const opacity = index === currentIndex ? 1 : 0.7;
-        const zIndex = index === currentIndex ? 1 : 0;
+    function showSlide(index) {
+        // Oculta todos los slides
+        slides.forEach(slide => {
+            slide.classList.remove('active');
+            slide.style.opacity = '0';
+        });
         
-        slide.style.transform = `translateX(${offset}%) scale(${scale})`;
-        slide.style.opacity = opacity;
-        slide.style.zIndex = zIndex;
-    });
-});
+        // Muestra el slide actual
+        slides[index].classList.add('active');
+        slides[index].style.opacity = '1';
+        currentIndex = index;
+        
+        // Actualiza el contador de diapositivas
+        updateSlideCounter(index);
+    }
+
+    function updateSlideCounter(index) {
+        const currentElements = document.querySelectorAll('.slide-counter .current');
+        currentElements.forEach(el => {
+            el.textContent = index + 1;
+        });
+    }
+
+    function nextSlide() {
+        const newIndex = (currentIndex + 1) % slideCount;
+        showSlide(newIndex);
+    }
+
+    // Iniciar el avance automático
+    showSlide(0);
+    setInterval(nextSlide, intervalTime);
+}
