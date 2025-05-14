@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="group-view">
+    <div class="particles" id="particles"></div>
+    <div class="slides-container">
+        {% for group in slides %}
+        <div class="slide-group {% if loop.first %}active{% endif %}">
+            <div class="cards-container">
+                {% for item in group %}
+                <div class="group-card">
+                    <div class="group-image">
+                        {% if item.image %}
+                        <img src="data:image/png;base64,{{ item.image }}" alt="{{ item.name }}">
+                        {% else %}
+                        <div class="no-image">Sin imagen</div>
+                        {% endif %}
+                    </div>
+                    <div class="group-info">
+                        <h3 class="product-name">{{ item.name|truncate(30) }}</h3>
+                        <div class="product-quantity">{{ item.quantity }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

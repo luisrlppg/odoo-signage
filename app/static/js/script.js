@@ -1,54 +1,63 @@
-// Configuración del carrusel
-const slides = document.querySelector('.slides');
-const slideItems = document.querySelectorAll('.slide');
-let currentIndex = 0;
-const intervalTime = 6000;
-
-// Efecto de partículas
-function createParticles() {
-    const particlesContainer = document.getElementById('particles');
-    const particleCount = 50;
+// Reemplaza la función initGroupView() por esta versión corregida:
+function initGroupView() {
+    const slideGroups = document.querySelectorAll('.slide-group');
+    let currentIndex = 0;
+    const intervalTime = 3000; // 15 segundos por grupo
     
-    for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.classList.add('particle');
+    if (slideGroups.length > 1) { // Solo si hay más de un grupo
+        function showNextGroup() {
+            slideGroups[currentIndex].classList.remove('active');
+            currentIndex = (currentIndex + 1) % slideGroups.length;
+            slideGroups[currentIndex].classList.add('active');
+        }
         
-        const size = Math.random() * 5 + 1;
-        const posX = Math.random() * 100;
-        const posY = Math.random() * 100;
-        const delay = Math.random() * 5;
-        const duration = Math.random() * 10 + 10;
+        // Iniciar el intervalo
+        const intervalId = setInterval(showNextGroup, intervalTime);
         
-        particle.style.width = `${size}px`;
-        particle.style.height = `${size}px`;
-        particle.style.left = `${posX}%`;
-        particle.style.top = `${posY}%`;
-        particle.style.opacity = Math.random() * 0.5 + 0.1;
-        particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
-        
-        particlesContainer.appendChild(particle);
+        // Pausar al hacer hover (opcional)
+        const container = document.querySelector('.slides-container');
+        container.addEventListener('mouseenter', () => clearInterval(intervalId));
+        container.addEventListener('mouseleave', () => {
+            intervalId = setInterval(showNextGroup, intervalTime);
+        });
     }
-}
-
-function nextSlide() {
-    slideItems[currentIndex].classList.remove('active');
-    currentIndex = (currentIndex + 1) % slideItems.length;
-    slideItems[currentIndex].classList.add('active');
-    
-    slideItems.forEach((slide, index) => {
-        const offset = (index - currentIndex) * 100;
-        const scale = index === currentIndex ? 1 : 0.9;
-        const opacity = index === currentIndex ? 1 : 0.7;
-        const zIndex = index === currentIndex ? 1 : 0;
-        
-        slide.style.transform = `translateX(${offset}%) scale(${scale})`;
-        slide.style.opacity = opacity;
-        slide.style.zIndex = zIndex;
-    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     createParticles();
+    
+    // Inicializar la vista correcta según la página
+    if (document.querySelector('.carousel')) {
+        initCarousel();
+    } else if (document.querySelector('.group-view')) {
+        initGroupView();
+    }
+});
+
+// Mover la lógica del carrusel a una función separada
+function initCarousel() {
+    const slides = document.querySelector('.slides');
+    const slideItems = document.querySelectorAll('.slide');
+    let currentIndex = 0;
+    const intervalTime = 6000;
+    
+    function nextSlide() {
+        slideItems[currentIndex].classList.remove('active');
+        currentIndex = (currentIndex + 1) % slideItems.length;
+        slideItems[currentIndex].classList.add('active');
+        
+        slideItems.forEach((slide, index) => {
+            const offset = (index - currentIndex) * 100;
+            const scale = index === currentIndex ? 1 : 0.9;
+            const opacity = index === currentIndex ? 1 : 0.7;
+            const zIndex = index === currentIndex ? 1 : 0;
+            
+            slide.style.transform = `translateX(${offset}%) scale(${scale})`;
+            slide.style.opacity = opacity;
+            slide.style.zIndex = zIndex;
+        });
+    }
+    
     setInterval(nextSlide, intervalTime);
     
     // Configuración inicial
@@ -62,4 +71,4 @@ document.addEventListener('DOMContentLoaded', () => {
         slide.style.opacity = opacity;
         slide.style.zIndex = zIndex;
     });
-});
+}

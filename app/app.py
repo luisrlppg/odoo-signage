@@ -70,6 +70,45 @@ def format_quantity(quantity):
     """Formatea la cantidad con separadores de miles."""
     return "{:,.2f}".format(quantity).replace(",", "X").replace(".", ",").replace("X", ".")
 
+@app.route('/vista-agrupada')
+def vista_agrupada():
+    try:
+        models, uid = connect_odoo()
+        if not uid:
+            return "Error de autenticación con Odoo", 500
+        
+        manufacturing_orders = obtener_ordenes_activas(models, uid)
+        if not manufacturing_orders:
+            return "No hay órdenes de fabricación activas", 404
+
+        total, names = get_manufac_totals(manufacturing_orders)
+        image_dict = obtener_imagenes_productos(models, uid, total.keys())
+
+        # Ordenar por cantidad descendente
+        sorted_items = sorted(
+            [{
+                'name': names.get(pid, 'Producto sin nombre'),
+                'quantity': format_quantity(total[pid]),
+                'image': image_dict.get(pid, ''),
+                'pid': pid
+            } for pid in total.keys()],
+            key=lambda x: float(x['quantity'].replace('.', '').replace(',', '.')),
+            reverse=True
+        )
+
+        # En la función vista_agrupada(), modifica la parte del agrupamiento:
+        group_size = 10  # Cambiado de 6 a 10
+        slides = [
+            sorted_items[i:i + group_size] 
+            for i in range(0, len(sorted_items), group_size)
+        ]
+
+        return render_template('vista_agrupada.html', slides=slides)
+
+    except Exception as e:
+        app.logger.error(f"Error al procesar las órdenes de fabricación: {e}")
+        return f"Error del servidor: {e}", 500
+
 @app.route('/')
 def carrusel():
     try:
