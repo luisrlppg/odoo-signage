@@ -2,15 +2,33 @@
     --primary-color: #1a1a2e;
     --secondary-color: #16213e;
     --accent-color: #0f3460;
-    --text-color: #b0d6f5;
-    --light-color: #f1f1f1;
+    --text-color: #c2e4ff;
+    --light-color: #ffffff;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    --transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    --transition: all 0.5s ease;
+    --z-index-back: -1;
+    --z-index-base: 1;
+    --z-index-middle: 10;
+    --z-index-top: 100;
+    --z-index-max: 999;
+}
+
+/* Reset mejorado */
+html, body, div, span, h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, 
+kbd, q, s, samp, small, strike, strong, sub, sup, tt, var,
+b, u, i, center, dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend, table, caption, tbody, tfoot, 
+thead, tr, th, td {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
 }
 
 * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
 }
 
@@ -20,7 +38,7 @@ body {
     color: var(--light-color);
     overflow: hidden;
     height: 100vh;
-    perspective: 1000px;
+    perspective: 1200px;
 }
 
 .carousel {
@@ -41,7 +59,10 @@ body {
 }
 
 .slide {
-    min-width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
     height: 100%;
     display: flex;
     justify-content: center;
@@ -50,15 +71,13 @@ body {
     transition: var(--transition);
     opacity: 0.7;
     transform: scale(0.9) translateZ(-100px);
-    position: absolute;
-    top: 0;
-    left: 0;
+    z-index: var(--z-index-base);
 }
 
 .slide.active {
     opacity: 1;
     transform: scale(1) translateZ(0);
-    z-index: 1;
+    z-index: var(--z-index-middle);
 }
 
 .card {
@@ -73,6 +92,13 @@ body {
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: var(--transition);
+    will-change: transform, box-shadow;
+}
+
+@supports not (backdrop-filter: blur(10px)) {
+    .card {
+        background: rgba(22, 33, 62, 0.95);
+    }
 }
 
 .image {
@@ -117,7 +143,7 @@ body {
     width: 200%;
     height: 200%;
     background: radial-gradient(circle, rgba(233, 69, 96, 0.1) 0%, transparent 70%);
-    z-index: 0;
+    z-index: var(--z-index-back);
 }
 
 h2 {
@@ -125,7 +151,7 @@ h2 {
     margin-bottom: 2rem;
     color: var(--text-color);
     position: relative;
-    z-index: 1;
+    z-index: var(--z-index-base);
     text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
@@ -133,7 +159,7 @@ p {
     font-size: 2.5rem;
     margin-bottom: 1.5rem;
     position: relative;
-    z-index: 1;
+    z-index: var(--z-index-base);
 }
 
 .quantity-display {
@@ -162,7 +188,7 @@ p {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: -1;
+    z-index: var(--z-index-back);
 }
 
 .particle {
@@ -250,9 +276,99 @@ p {
 }
 
 @media (max-width: 1200px) {
+    h2 {
+        font-size: 2.8rem;
+    }
+    
+    p {
+        font-size: 2rem;
+    }
+    
+    .quantity-display {
+        font-size: 3rem;
+    }
+    
     .group-container {
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(4, 1fr);
     }
 }
 
+@media (max-width: 768px) {
+    .card {
+        grid-template-columns: 1fr;
+        grid-template-rows: 40% 60%;
+        width: 90%;
+        height: 90%;
+    }
+    
+    h2 {
+        font-size: 2rem;
+    }
+    
+    p {
+        font-size: 1.5rem;
+    }
+    
+    .quantity-display {
+        font-size: 2.5rem;
+    }
+    
+    .info, .image {
+        padding: 1.5rem;
+    }
+    
+    .card, .group-card {
+        backdrop-filter: blur(5px);
+    }
+    
+    .group-container {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    h2 {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+    
+    p {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .quantity-display {
+        font-size: 2rem;
+    }
+    
+    .info {
+        padding: 1rem;
+    }
+    
+    .group-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(10, 1fr);
+    }
+}
+
+/* Accesibilidad - Reduce movimiento */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    .slide.active .card {
+        animation: none;
+    }
+}
+
+/* Navegación con teclado */
+*:focus {
+    outline: 2px solid var(--text-color);
+    outline-offset: 2px;
+}
