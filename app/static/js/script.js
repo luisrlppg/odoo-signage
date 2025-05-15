@@ -1,8 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     createParticles();
-    initAutoAdvance();
+    initCategoryRotation();
 });
-
 // Función de partículas (mantener igual)
 function createParticles() {
     const particlesContainer = document.getElementById('particles');
@@ -29,43 +28,78 @@ function createParticles() {
     }
 }
 
-function initAutoAdvance() {
-    const slides = document.querySelectorAll('.slide');
-    const slideCount = slides.length;
-    let currentIndex = 0;
-    const intervalTime = 10000; // 10 segundos por slide
+function initCategoryRotation() {
+    const categories = ['inyeccion', 'ensamble', 'cepillo'];
+    const categorySections = document.querySelectorAll('.category-section');
+    const categoryDuration = 30000; // 30 segundos por categoría
+    let currentCategoryIndex = 0;
     
-    if (slideCount <= 1) return; // No necesita avanzar si hay solo 1 slide
+    if (categories.length <= 1) return; // No rotar si solo hay una categoría
 
-    function showSlide(index) {
-        // Oculta todos los slides
-        slides.forEach(slide => {
-            slide.classList.remove('active');
-            slide.style.opacity = '0';
+    function showCategory(index) {
+        // Oculta todas las categorías
+        categorySections.forEach(section => {
+            section.classList.remove('active');
         });
         
-        // Muestra el slide actual
-        slides[index].classList.add('active');
-        slides[index].style.opacity = '1';
-        currentIndex = index;
+        // Muestra la categoría actual
+        document.getElementById(categories[index]).classList.add('active');
         
-        // Actualiza el contador de diapositivas
-        updateSlideCounter(index);
+        // Inicia el carrusel de slides para esta categoría
+        initSlideRotation(categories[index]);
+        
+        currentCategoryIndex = index;
     }
 
-    function updateSlideCounter(index) {
-        const currentElements = document.querySelectorAll('.slide-counter .current');
-        currentElements.forEach(el => {
-            el.textContent = index + 1;
-        });
+    function nextCategory() {
+        const newIndex = (currentCategoryIndex + 1) % categories.length;
+        showCategory(newIndex);
     }
 
-    function nextSlide() {
-        const newIndex = (currentIndex + 1) % slideCount;
-        showSlide(newIndex);
+    function initSlideRotation(category) {
+        const slides = document.querySelectorAll(`.slide[data-category="${category}"]`);
+        const slideCount = slides.length;
+        let currentSlideIndex = 0;
+        const slideDuration = 10000; // 10 segundos por slide
+        
+        if (slideCount <= 1) return; // No rotar si solo hay un slide
+
+        function showSlide(index) {
+            slides.forEach(slide => {
+                slide.classList.remove('active');
+                slide.style.opacity = '0';
+            });
+            
+            slides[index].classList.add('active');
+            slides[index].style.opacity = '1';
+            currentSlideIndex = index;
+            
+            updateSlideCounter(slides[index], index);
+        }
+
+        function updateSlideCounter(slide, index) {
+            const counter = slide.querySelector('.slide-counter .current');
+            if (counter) {
+                counter.textContent = index + 1;
+            }
+        }
+
+        function nextSlide() {
+            const newIndex = (currentSlideIndex + 1) % slideCount;
+            showSlide(newIndex);
+        }
+
+        // Mostrar primer slide y configurar intervalo
+        showSlide(0);
+        const intervalId = setInterval(nextSlide, slideDuration);
+        
+        // Limpiar intervalo cuando cambie de categoría
+        setTimeout(() => {
+            clearInterval(intervalId);
+        }, categoryDuration - 1000);
     }
 
-    // Iniciar el avance automático
-    showSlide(0);
-    setInterval(nextSlide, intervalTime);
+    // Iniciar rotación de categorías
+    showCategory(0);
+    setInterval(nextCategory, categoryDuration);
 }
