@@ -46,25 +46,50 @@ def obtener_imagenes_productos(models, uid, product_ids):
         image_dict = {p['id']: p['image_1920'] for p in product_images if p.get('image_1920')}
     return image_dict
 
-def get_manufac_totals(manufacturing_orders):
-    total = {}
-    names = {}
-
+def get_manufac_totals_by_category(models, uid, manufacturing_orders):
+    categories = {
+        'ensamble': {'total': {}, 'names': {}},
+        'cepillo': {'total': {}, 'names': {}},
+        'inyeccion': {'total': {}, 'names': {}}
+    }
+    
+    # Obtener categorías de los productos
+    product_ids = [orden['product_id'][0] for orden in manufacturing_orders]
+    product_categories = models.execute_kw(
+        ODOO_DB, uid, ODOO_PASSWORD,
+        'product.product', 'read',
+        [product_ids],
+        {'fields': ['categ_id']}
+    )
+    
+    # Mapear producto a categoría
+    product_to_category = {}
+    for product in product_categories:
+        categ_name = product['categ_id'][1].lower() if product.get('categ_id') else ''
+        if 'ensamble' in categ_name or 'pincel' in categ_name:
+            product_to_category[product['id']] = 'ensamble'
+        elif 'cepillo' in categ_name:
+            product_to_category[product['id']] = 'cepillo'
+        else:
+            product_to_category[product['id']] = 'inyeccion'
+    
+    # Agrupar por categoría
     for orden in manufacturing_orders:
         producto_info = orden['product_id']
         cantidad = orden['product_qty']
         estado = orden['state']
+        product_id = producto_info[0]
 
-        if estado == 'confirmed' or estado == 'progress' or estado == 'to_close':
-            id = producto_info[0]
-
-            if id in total:
-                total[id] += cantidad
+        if estado in ['confirmed', 'progress', 'to_close']:
+            category = product_to_category.get(product_id, 'inyeccion')
+            
+            if product_id in categories[category]['total']:
+                categories[category]['total'][product_id] += cantidad
             else:
-                total[id] = cantidad
-                names[id] = producto_info[1]
-
-    return total, names
+                categories[category]['total'][product_id] = cantidad
+                categories[category]['names'][product_id] = producto_info[1]
+    
+    return categories
 
 def format_quantity(quantity):
     """Formatea la cantidad con separadores de miles."""
@@ -81,30 +106,38 @@ def vista_agrupada():
         if not manufacturing_orders:
             return "No hay órdenes de fabricación activas", 404
 
-        total, names = get_manufac_totals(manufacturing_orders)
-        image_dict = obtener_imagenes_productos(models, uid, total.keys())
+        categories = get_manufac_totals_by_category(models, uid, manufacturing_orders)
+        all_product_ids = []
+        for category in categories.values():
+            all_product_ids.extend(category['total'].keys())
+        
+        image_dict = obtener_imagenes_productos(models, uid, all_product_ids)
 
-        # Ordenar por cantidad descendente
-        sorted_items = sorted(
-            [{
-                'name': names.get(pid, 'Producto sin nombre'),
-                'quantity': format_quantity(total[pid]),
-                'image': image_dict.get(pid, ''),
-                'pid': pid
-            } for pid in total.keys()],
-            key=lambda x: float(x['quantity'].replace('.', '').replace(',', '.')),
-            reverse=True
-        )
+        # Procesar cada categoría
+        slides_data = {}
+        for category_name, category_data in categories.items():
+            sorted_items = sorted(
+                [{
+                    'name': category_data['names'].get(pid, 'Producto sin nombre'),
+                    'quantity': format_quantity(category_data['total'][pid]),
+                    'image': image_dict.get(pid, ''),
+                    'pid': pid
+                } for pid in category_data['total'].keys()],
+                key=lambda x: float(x['quantity'].replace('.', '').replace(',', '.')),
+                reverse=True
+            )
+            
+            # Agrupar en slides de 10 items
+            group_size = 10
+            slides_data[category_name] = [
+                sorted_items[i:i + group_size] 
+                for i in range(0, len(sorted_items), group_size)
+            ]
 
-        # En la función vista_agrupada(), modifica la parte del agrupamiento:
-        group_size = 10  # Cambiado de 6 a 10
-        slides = [
-            sorted_items[i:i + group_size] 
-            for i in range(0, len(sorted_items), group_size)
-        ]
-
-        return render_template('vista_agrupada.html', slides=slides)
-
+        return render_template('vista_agrupada.html', 
+                            slides_ensamble=slides_data['ensamble'],
+                            slides_cepillo=slides_data['cepillo'],
+                            slides_inyeccion=slides_data['inyeccion'])
     except Exception as e:
         app.logger.error(f"Error al procesar las órdenes de fabricación: {e}")
         return f"Error del servidor: {e}", 500
