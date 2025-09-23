@@ -1,0 +1,8 @@
+services:
+  etiqueta-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: label-app  # Reemplaza con el nombre de tu imagen de Flask
+    ports:
+      - "8000:5000"        # Si tu app Flask expone el puerto 5000

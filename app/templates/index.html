@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Etiquetas</title>
+</head>
+<body>
+    <h1>Generar etiqueta</h1>
+    <form method="post">
+        <label>Cliente:</label>
+        <select name="cliente" required>
+            {% for c in clientes %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+        <label>Producto:</label>
+        <select name="producto" required>
+            {% for p in productos %}
+            <option value="{{ p.id }}">{{ p.display_name }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+		<div>
+		  <label for="cantidad">Cantidad:</label>
+		  <input type="text" id="cantidad" name="cantidad" placeholder="Ingresa la cantidad">
+		</div>
+
+		<div>
+		  <label for="peso_bruto">Peso bruto:</label>
+		  <input type="text" id="peso_bruto" name="peso_bruto" placeholder="Kg">
+		</div>
+
+		<div>
+		  <label for="peso_neto">Peso neto:</label>
+		  <input type="text" id="peso_neto" name="peso_neto" placeholder="Kg">
+		</div>
+
+		<div>
+		  <label for="peso_unitario">Peso unitario:</label>
+		  <input type="text" id="peso_unitario" name="peso_unitario" placeholder="Kg">
+		</div>
+
+		<div>
+		  <input type="checkbox" id="use_empresa_header" name="use_empresa_header" value="1">
+		  <label for="use_empresa_header">Usar información de la empresa en el header</label>
+		</div>
+        <button type="submit">Generar PDF</button>
+    </form>
+</body>
+</html>
