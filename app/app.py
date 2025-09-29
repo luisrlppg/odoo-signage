@@ -128,10 +128,8 @@ def create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario
     c = canvas.Canvas(buffer, pagesize=(ANCHO_PT, ALTO_PT))
     pad = 8  # pts
 
-    # HEADER
-    header_y = ALTO_PT - pad - 5
-
     if use_empresa_header:
+        header_y = ALTO_PT - pad - 5
         c.setFont("Helvetica-Bold", 16)
         c.drawCentredString(ANCHO_PT / 2, header_y, "Plásticos Plasa de Guadalajara S.A. de C.V.")
         header_y -= 12
@@ -143,7 +141,8 @@ def create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario
         c.drawCentredString(ANCHO_PT / 2, header_y, "Teléfono: 33-3651-5424    www.plasticosplasa.com")
         header_y -= 12
     else:
-        c.setFont("Helvetica-Bold", 16)
+        header_y = ALTO_PT - pad - 20
+        c.setFont("Helvetica-Bold", 24)
         c.drawCentredString(ANCHO_PT / 2, header_y, "EMBARQUE")
         header_y -= 18
 
@@ -172,20 +171,52 @@ def create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario
     c.drawCentredString(left_x + left_w/2, left_y, "Manejese con Cuidado")
     left_y -= 6
 
-    # Imagen fija si existe
+    # Imagen fija si existe (ajustado para mostrarla más grande)
     logo_path = os.path.join(app.root_path, "static", "fixed.png")
-    max_img_h = available_h * 0.50
+
+    # Ajustables: porcentaje máximo de la altura disponible que puede ocupar la imagen,
+    # y un pequeño factor de upscale si quieres que la imagen se haga un poco más grande.
+    LEFT_IMAGE_HEIGHT_RATIO = 0.6  # antes era 0.50 -> incrementa esto para más altura
+    MAX_UPSCALE = 1.0  # si quieres permitir hasta 1.2x de escalado fijo, pon 1.2 (cuidado con pixelación)
+
+    max_img_h = available_h * LEFT_IMAGE_HEIGHT_RATIO
+
     try:
         if os.path.exists(logo_path):
             img = Image.open(logo_path)
-            iw, ih = img.size
-            scale = min(left_w/iw, max_img_h/ih)
-            draw_w = iw*scale
-            draw_h = ih*scale
+            iw, ih = img.size  # pixeles
+            # escala para que quepa en ancho o alto permitido (manteniendo aspecto)
+            scale_w = left_w / iw
+            scale_h = max_img_h / ih
+            scale = min(scale_w, scale_h) * MAX_UPSCALE
+
+            # Evitar valores no positivos
+            if scale <= 0:
+                scale = 1.0
+
+            draw_w = iw * scale
+            draw_h = ih * scale
+
+            # Si por algún motivo draw_w excede left_w (por MAX_UPSCALE), lo limitamos
+            if draw_w > left_w:
+                factor = left_w / draw_w
+                draw_w *= factor
+                draw_h *= factor
+
+            # Convertir a BytesIO y dibujar
             img_buf = BytesIO()
             img.convert("RGBA").save(img_buf, format="PNG")
             img_buf.seek(0)
-            c.drawImage(ImageReader(img_buf), left_x, left_y - draw_h, width=draw_w, height=draw_h, preserveAspectRatio=True)
+            # Calcular coordenadas centradas
+            img_x = left_x + (left_w - draw_w) / 2
+            img_y = left_y - draw_h
+
+            c.drawImage(
+                ImageReader(img_buf),
+                img_x, img_y,
+                width=draw_w, height=draw_h,
+                preserveAspectRatio=True
+            )
             left_y -= draw_h + 5
         else:
             raise FileNotFoundError
@@ -193,6 +224,7 @@ def create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario
         c.setFont("Helvetica", 7)
         c.drawString(left_x, left_y - 10, "[Imagen fija no encontrada: coloca static/fixed.png]")
         left_y -= 20
+
 
     text_y = left_y - 10
     c.setFont("Helvetica", 12)
@@ -321,4 +353,4 @@ def index():
 # ---------------------------
 if __name__ == "__main__":
     # En producción deberías usar gunicorn/uwsgi y no app.run
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
