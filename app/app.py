@@ -348,7 +348,7 @@ def index():
             'empresa_direccion': request.form.get("empresa_direccion") if edit_header else "Calle Florentino Acosta #1090",
             'empresa_ciudad': request.form.get("empresa_ciudad") if edit_header else "Guadalajara, Jalisco   C.P.44329",
             'empresa_contacto': request.form.get("empresa_contacto") if edit_header else "Teléfono: 33-3651-5424    www.plasticosplasa.com",
-            'cliente_info_title': request.form.get("cliente_info_title", "Información del cliente:"),
+            'cliente_info_title': request.form.get("cliente_info_title", "Para cliente:"),
             'fragil_text': "FRÁGIL",
             'fragil_subtext': "Manejese con Cuidado",
             'estiba_text': "ESTIBA MÁXIMA 3 CAJAS",
