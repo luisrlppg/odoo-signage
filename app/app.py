@@ -120,30 +120,31 @@ def draw_wrapped_text(c, text, x, y, max_width, font_name="Helvetica", font_size
 # ---------------------------
 # Generación de PDF
 # ---------------------------
-def create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario, use_empresa_header):
+def create_pdf(label_data):
     """
-    Genera el PDF en memoria y devuelve BytesIO listo para enviar.
+    Genera el PDF en memoria usando label_data dict y devuelve BytesIO listo para enviar.
     """
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(ANCHO_PT, ALTO_PT))
     pad = 8  # pts
 
-    if use_empresa_header:
+    # Header
+    if label_data.get('use_empresa_header'):
         header_y = ALTO_PT - pad - 5
         c.setFont("Helvetica-Bold", 16)
-        c.drawCentredString(ANCHO_PT / 2, header_y, "Plásticos Plasa de Guadalajara S.A. de C.V.")
+        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_nombre', "Plásticos Plasa de Guadalajara S.A. de C.V."))
         header_y -= 12
         c.setFont("Helvetica", 8)
-        c.drawCentredString(ANCHO_PT / 2, header_y, "Calle Florentino Acosta #1090")
+        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_direccion', "Calle Florentino Acosta #1090"))
         header_y -= 12
-        c.drawCentredString(ANCHO_PT / 2, header_y, "Guadalajara, Jalisco   C.P.44329")
+        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_ciudad', "Guadalajara, Jalisco   C.P.44329"))
         header_y -= 12
-        c.drawCentredString(ANCHO_PT / 2, header_y, "Teléfono: 33-3651-5424    www.plasticosplasa.com")
+        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_contacto', "Teléfono: 33-3651-5424    www.plasticosplasa.com"))
         header_y -= 12
     else:
         header_y = ALTO_PT - pad - 20
         c.setFont("Helvetica-Bold", 24)
-        c.drawCentredString(ANCHO_PT / 2, header_y, "EMBARQUE")
+        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('header_text', "EMBARQUE"))
         header_y -= 18
 
     # Línea separadora
@@ -159,64 +160,44 @@ def create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario
     col_bottom = pad
     available_h = col_top - col_bottom
 
-    # ========== Columna izquierda ==========
+    # ========== Columna izquierda ========== 
     left_x = col_x[0] + pad
     left_w = col_w[0] - 2*pad
     left_y = col_top - 20
 
     c.setFont("Helvetica-Bold", 18)
-    c.drawCentredString(left_x + left_w/2, left_y, "FRÁGIL")
+    c.drawCentredString(left_x + left_w/2, left_y, label_data.get('fragil_text', "FRÁGIL"))
     left_y -= 12
     c.setFont("Helvetica", 12)
-    c.drawCentredString(left_x + left_w/2, left_y, "Manejese con Cuidado")
+    c.drawCentredString(left_x + left_w/2, left_y, label_data.get('fragil_subtext', "Manejese con Cuidado"))
     left_y -= 6
 
-    # Imagen fija si existe (ajustado para mostrarla más grande)
+    # Imagen fija si existe
     logo_path = os.path.join(app.root_path, "static", "fixed.png")
-
-    # Ajustables: porcentaje máximo de la altura disponible que puede ocupar la imagen,
-    # y un pequeño factor de upscale si quieres que la imagen se haga un poco más grande.
-    LEFT_IMAGE_HEIGHT_RATIO = 0.6  # antes era 0.50 -> incrementa esto para más altura
-    MAX_UPSCALE = 1.0  # si quieres permitir hasta 1.2x de escalado fijo, pon 1.2 (cuidado con pixelación)
-
+    LEFT_IMAGE_HEIGHT_RATIO = 0.6
+    MAX_UPSCALE = 1.0
     max_img_h = available_h * LEFT_IMAGE_HEIGHT_RATIO
-
     try:
         if os.path.exists(logo_path):
             img = Image.open(logo_path)
-            iw, ih = img.size  # pixeles
-            # escala para que quepa en ancho o alto permitido (manteniendo aspecto)
+            iw, ih = img.size
             scale_w = left_w / iw
             scale_h = max_img_h / ih
             scale = min(scale_w, scale_h) * MAX_UPSCALE
-
-            # Evitar valores no positivos
             if scale <= 0:
                 scale = 1.0
-
             draw_w = iw * scale
             draw_h = ih * scale
-
-            # Si por algún motivo draw_w excede left_w (por MAX_UPSCALE), lo limitamos
             if draw_w > left_w:
                 factor = left_w / draw_w
                 draw_w *= factor
                 draw_h *= factor
-
-            # Convertir a BytesIO y dibujar
             img_buf = BytesIO()
             img.convert("RGBA").save(img_buf, format="PNG")
             img_buf.seek(0)
-            # Calcular coordenadas centradas
             img_x = left_x + (left_w - draw_w) / 2
             img_y = left_y - draw_h
-
-            c.drawImage(
-                ImageReader(img_buf),
-                img_x, img_y,
-                width=draw_w, height=draw_h,
-                preserveAspectRatio=True
-            )
+            c.drawImage(ImageReader(img_buf), img_x, img_y, width=draw_w, height=draw_h, preserveAspectRatio=True)
             left_y -= draw_h + 5
         else:
             raise FileNotFoundError
@@ -225,34 +206,33 @@ def create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario
         c.drawString(left_x, left_y - 10, "[Imagen fija no encontrada: coloca static/fixed.png]")
         left_y -= 20
 
-
     text_y = left_y - 10
     c.setFont("Helvetica", 12)
-    c.drawCentredString(left_x + left_w/2, text_y, "ESTIBA MÁXIMA 3 CAJAS")
+    c.drawCentredString(left_x + left_w/2, text_y, label_data.get('estiba_text', "ESTIBA MÁXIMA 3 CAJAS"))
 
-    # ========== Columna central ==========
+    # ========== Columna central ========== 
     center_x = col_x[1] + pad
     center_w = col_w[1] - 2*pad
     cur_y = col_top - 20
 
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(center_x, cur_y - 8, "Información del cliente:")
+    c.drawString(center_x, cur_y - 8, label_data.get('cliente_info_title', "Información del cliente:"))
     y_client = cur_y - 28
 
     c.setFont("Helvetica-Bold", 12)
-    y_client = draw_wrapped_text(c, cliente.get('name', ''), center_x, y_client, center_w, font_name="Helvetica-Bold", font_size=12, leading=11)
+    y_client = draw_wrapped_text(c, label_data['cliente'].get('name', ''), center_x, y_client, center_w, font_name="Helvetica-Bold", font_size=12, leading=11)
     y_client -= 4
     c.setFont("Helvetica", 8)
-    y_client = draw_wrapped_text(c, f"Tel: {cliente.get('phone','')}", center_x, y_client, center_w, font_name="Helvetica", font_size=8, leading=9)
+    y_client = draw_wrapped_text(c, f"Tel: {label_data['cliente'].get('phone','')}", center_x, y_client, center_w, font_name="Helvetica", font_size=8, leading=9)
     y_client -= 2
-    direccion = f"{cliente.get('street','')} {cliente.get('street2','')}, {cliente.get('city','')} {cliente.get('zip','')}"
+    direccion = f"{label_data['cliente'].get('street','')} {label_data['cliente'].get('street2','')}, {label_data['cliente'].get('city','')} {label_data['cliente'].get('zip','')}"
     y_client = draw_wrapped_text(c, f"Dirección: {direccion}", center_x, y_client, center_w, font_name="Helvetica", font_size=8, leading=9)
     y_client -= 2
-    y_client = draw_wrapped_text(c, f"Email: {cliente.get('email','')}", center_x, y_client, center_w, font_name="Helvetica", font_size=8, leading=9)
+    y_client = draw_wrapped_text(c, f"Email: {label_data['cliente'].get('email','')}", center_x, y_client, center_w, font_name="Helvetica", font_size=8, leading=9)
 
     cur_y = y_client - 20
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(center_x, cur_y, "Detalles del Embarque:")
+    c.drawString(center_x, cur_y, label_data.get('embarque_title', "Detalles del Embarque:"))
     cur_y -= 12
 
     hoy = date.today().strftime("%d/%m/%Y")
@@ -262,22 +242,21 @@ def create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario
     cur_y -= 12
 
     cur_y = draw_wrapped_text(c, f"Lote: {date.today().strftime('%y%m%d')}", center_x, cur_y, center_w, font_name="Helvetica", font_size=8, leading=10)
-    cur_y = draw_wrapped_text(c, f"Cantidad: {cantidad}", center_x, cur_y, center_w, font_name="Helvetica", font_size=8, leading=10)
-    cur_y = draw_wrapped_text(c, f"Peso bruto: {peso_bruto}", center_x, cur_y, center_w, font_name="Helvetica", font_size=8, leading=10)
-    cur_y = draw_wrapped_text(c, f"Peso neto: {peso_neto}", center_x, cur_y, center_w, font_name="Helvetica", font_size=8, leading=10)
-    cur_y = draw_wrapped_text(c, f"Peso unitario: {peso_unitario}", center_x, cur_y, center_w, font_name="Helvetica", font_size=8, leading=10)
+    cur_y = draw_wrapped_text(c, f"Cantidad: {label_data.get('cantidad','')}", center_x, cur_y, center_w, font_name="Helvetica", font_size=8, leading=10)
+    cur_y = draw_wrapped_text(c, f"Peso bruto: {label_data.get('peso_bruto','')}", center_x, cur_y, center_w, font_name="Helvetica", font_size=8, leading=10)
+    cur_y = draw_wrapped_text(c, f"Peso neto: {label_data.get('peso_neto','')}", center_x, cur_y, center_w, font_name="Helvetica", font_size=8, leading=10)
+    cur_y = draw_wrapped_text(c, f"Peso unitario: {label_data.get('peso_unitario','')}", center_x, cur_y, center_w, font_name="Helvetica", font_size=8, leading=10)
 
-    # ========== Columna derecha ==========
+    # ========== Columna derecha ========== 
     right_x = col_x[2] + pad
     right_w = col_w[2] - 2*pad
     right_y = col_top - 20
 
     c.setFont("Helvetica-Bold", 12)
-    right_y = draw_wrapped_text(c, producto.get('display_name',''), right_x, right_y, right_w, font_name="Helvetica-Bold", font_size=12, leading=14)
+    right_y = draw_wrapped_text(c, label_data['producto'].get('display_name',''), right_x, right_y, right_w, font_name="Helvetica-Bold", font_size=12, leading=14)
     right_y -= 6
 
-    # Imagen del producto (base64 desde Odoo)
-    img_b64 = producto.get('image_1920')
+    img_b64 = label_data['producto'].get('image_1920')
     if img_b64:
         try:
             image_data = base64.b64decode(img_b64)
@@ -302,7 +281,7 @@ def create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario
         c.drawString(right_x, right_y - 10, "[Sin imagen]")
 
     # Footer
-    footer_text = "Generado por Plásticos Plasa - Etiqueta personalizada"
+    footer_text = label_data.get('footer_text', "Generado por Plásticos Plasa - Etiqueta personalizada")
     c.setFont("Helvetica-Oblique", 6)
     c.drawCentredString(ANCHO_PT/2, pad/2, footer_text)
 
@@ -320,27 +299,64 @@ def index():
     productos = fetch_productos()
 
     if request.method == "POST":
-        # Inputs válidos y convertidos
         try:
             cliente_id = int(request.form.get("cliente", 0))
             producto_id = int(request.form.get("producto", 0))
         except ValueError:
             abort(400, "Cliente o producto inválido")
 
-        use_empresa_header = request.form.get("use_empresa_header") == "1"
-        cantidad = request.form.get("cantidad", "")
-        peso_bruto = request.form.get("peso_bruto", "")
-        peso_neto = request.form.get("peso_neto", "")
-        peso_unitario = request.form.get("peso_unitario", "")
-
         cliente = next((c for c in clientes if c.get('id') == cliente_id), None)
         producto = next((p for p in productos if p.get('id') == producto_id), None)
-
         if cliente is None or producto is None:
             abort(404, "Cliente o producto no encontrado")
 
+        # Construir el diccionario de datos para la etiqueta, usando valores opcionales si se proporcionan
+        cliente_mod = cliente.copy() if cliente else {}
+        if request.form.get("cliente_name"): cliente_mod['name'] = request.form.get("cliente_name")
+        if request.form.get("cliente_phone"): cliente_mod['phone'] = request.form.get("cliente_phone")
+        if request.form.get("cliente_address"): 
+            # Sobrescribe toda la dirección en un solo campo
+            cliente_mod['street'] = request.form.get("cliente_address")
+            cliente_mod['street2'] = ""
+            cliente_mod['city'] = ""
+            cliente_mod['zip'] = ""
+        if request.form.get("cliente_email"): cliente_mod['email'] = request.form.get("cliente_email")
+
+        producto_mod = producto.copy() if producto else {}
+        if request.form.get("producto_name"): producto_mod['display_name'] = request.form.get("producto_name")
+
+        # Procesar imagen subida para el producto
+        producto_image_b64 = None
+        if 'producto_image' in request.files:
+            file = request.files['producto_image']
+            if file and file.filename:
+                img_bytes = file.read()
+                producto_image_b64 = base64.b64encode(img_bytes).decode('utf-8')
+                producto_mod['image_1920'] = producto_image_b64
+
+        # Si el usuario marcó el checkbox para editar el header, usar los valores del formulario; si no, usar los valores por defecto
+        edit_header = request.form.get("edit_header") == "1"
+        label_data = {
+            'cliente': cliente_mod,
+            'producto': producto_mod,
+            'cantidad': request.form.get("cantidad", ""),
+            'peso_bruto': request.form.get("peso_bruto", ""),
+            'peso_neto': request.form.get("peso_neto", ""),
+            'peso_unitario': request.form.get("peso_unitario", ""),
+            'use_empresa_header': True,
+            'header_text': request.form.get("header_text") if edit_header else "Plásticos Plasa de Guadalajara",
+            'empresa_direccion': request.form.get("empresa_direccion") if edit_header else "Calle Florentino Acosta #1090",
+            'empresa_ciudad': request.form.get("empresa_ciudad") if edit_header else "Guadalajara, Jalisco   C.P.44329",
+            'empresa_contacto': request.form.get("empresa_contacto") if edit_header else "Teléfono: 33-3651-5424    www.plasticosplasa.com",
+            'cliente_info_title': request.form.get("cliente_info_title", "Información del cliente:"),
+            'fragil_text': "FRÁGIL",
+            'fragil_subtext': "Manejese con Cuidado",
+            'estiba_text': "ESTIBA MÁXIMA 3 CAJAS",
+            'footer_text': request.form.get("footer_text", "Generado por Plásticos Plasa - Etiqueta personalizada"),
+        }
+
         try:
-            pdf_io = create_pdf(cliente, producto, cantidad, peso_bruto, peso_neto, peso_unitario, use_empresa_header)
+            pdf_io = create_pdf(label_data)
             return send_file(pdf_io, as_attachment=True, download_name="etiqueta_layout_personal.pdf", mimetype='application/pdf')
         except Exception:
             logger.exception("Error generando PDF")
@@ -353,4 +369,4 @@ def index():
 # ---------------------------
 if __name__ == "__main__":
     # En producción deberías usar gunicorn/uwsgi y no app.run
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)

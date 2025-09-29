@@ -1,0 +1,90 @@
+/* Grid layout for form sections */
+.form-grid {
+    display: grid;
+    grid-template-areas:
+        "header"
+        "cliente"
+        "producto"
+        "datos"
+        "footer";
+    gap: 24px;
+}
+.form-header { grid-area: header; }
+.form-cliente { grid-area: cliente; }
+.form-producto { grid-area: producto; }
+.form-datos { grid-area: datos; }
+.form-footer { grid-area: footer; }
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f6f8fa;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 32px 24px 24px 24px;
+}
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 24px;
+}
+form label {
+    display: block;
+    margin-bottom: 6px;
+    color: #34495e;
+    font-weight: 500;
+}
+form input[type="text"],
+form input[type="file"],
+form select {
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 16px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: #f9fafb;
+    transition: border-color 0.2s;
+}
+form input[type="text"]:focus,
+form select:focus {
+    border-color: #3498db;
+    outline: none;
+}
+form input[type="checkbox"] {
+    margin-right: 8px;
+}
+.form-section {
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e1e4e8;
+}
+.form-section:last-child {
+    border-bottom: none;
+}
+button[type="submit"] {
+    background: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(52,152,219,0.08);
+    transition: background 0.2s;
+}
+button[type="submit"]:hover {
+    background: #217dbb;
+}
+@media (max-width: 700px) {
+    .container {
+        max-width: 98vw;
+        padding: 16px 8px;
+    }
+}
