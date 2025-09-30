@@ -129,23 +129,17 @@ def create_pdf(label_data):
     pad = 8  # pts
 
     # Header
-    if label_data.get('use_empresa_header'):
-        header_y = ALTO_PT - pad - 5
-        c.setFont("Helvetica-Bold", 16)
-        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_nombre', "Plásticos Plasa de Guadalajara S.A. de C.V."))
-        header_y -= 12
-        c.setFont("Helvetica", 8)
-        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_direccion', "Calle Florentino Acosta #1090"))
-        header_y -= 12
-        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_ciudad', "Guadalajara, Jalisco   C.P.44329"))
-        header_y -= 12
-        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_contacto', "Teléfono: 33-3651-5424    www.plasticosplasa.com"))
-        header_y -= 12
-    else:
-        header_y = ALTO_PT - pad - 20
-        c.setFont("Helvetica-Bold", 24)
-        c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('header_text', "EMBARQUE"))
-        header_y -= 18
+    header_y = ALTO_PT - pad - 5
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('header_text', "Plásticos Plasa de Guadalajara S.A. de C.V."))
+    header_y -= 12
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_direccion', "Calle Florentino Acosta #1090"))
+    header_y -= 12
+    c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_ciudad', "Guadalajara, Jalisco   C.P.44329"))
+    header_y -= 12
+    c.drawCentredString(ANCHO_PT / 2, header_y, label_data.get('empresa_contacto', "Teléfono: 33-3651-5424    www.plasticosplasa.com"))
+    header_y -= 12
 
     # Línea separadora
     header_h = 0.18 * ALTO_PT
@@ -335,7 +329,6 @@ def index():
                 producto_mod['image_1920'] = producto_image_b64
 
         # Si el usuario marcó el checkbox para editar el header, usar los valores del formulario; si no, usar los valores por defecto
-        edit_header = request.form.get("edit_header") == "1"
         label_data = {
             'cliente': cliente_mod,
             'producto': producto_mod,
@@ -343,11 +336,10 @@ def index():
             'peso_bruto': request.form.get("peso_bruto", ""),
             'peso_neto': request.form.get("peso_neto", ""),
             'peso_unitario': request.form.get("peso_unitario", ""),
-            'use_empresa_header': True,
-            'header_text': request.form.get("header_text") if edit_header else "Plásticos Plasa de Guadalajara",
-            'empresa_direccion': request.form.get("empresa_direccion") if edit_header else "Calle Florentino Acosta #1090",
-            'empresa_ciudad': request.form.get("empresa_ciudad") if edit_header else "Guadalajara, Jalisco   C.P.44329",
-            'empresa_contacto': request.form.get("empresa_contacto") if edit_header else "Teléfono: 33-3651-5424    www.plasticosplasa.com",
+            'header_text': request.form.get("header_text", "Plasticos Plasa de Guadalajara S.A. de C.V."),
+            'empresa_direccion': request.form.get("empresa_direccion", "Calle Florentino Acosta #1090"),
+            'empresa_ciudad': request.form.get("empresa_ciudad", "Guadalajara, Jalisco   C.P.44329"),
+            'empresa_contacto': request.form.get("empresa_contacto", "Telefono: 33-3651-5424    www.plasticosplasa.com"),
             'cliente_info_title': request.form.get("cliente_info_title", "Para cliente:"),
             'fragil_text': "FRÁGIL",
             'fragil_subtext': "Manejese con Cuidado",
