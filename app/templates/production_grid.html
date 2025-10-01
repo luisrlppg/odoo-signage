@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/production_grid.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="grid-container">
+    {% for section_name, section_id in [('Inyección', 'inyeccion'), ('Ensamble', 'ensamble'), ('Cepillo', 'cepillo')] %}
+        <div class="section-base section-{{ section_id }} {% if section_id == largest_section %}section-large{% else %}section-small{% endif %}">
+            <h2>{{ section_name }}</h2>
+            {% if categories.get(section_id) %}
+                <div class="product-list">
+                    {% for pid, quantity in categories[section_id]['total'].items() %}
+                        <div class="product-item">
+                            <div class="product-name">{{ categories[section_id]['names'][pid] }}</div>
+                            <div class="product-quantity">{{ quantity|format_number }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No hay productos en {{ section_name.lower() }}</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -2,15 +2,10 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Carrusel Premium 4K{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {% block extra_css %}{% endblock %}
+    <title>Producción PPG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/production_grid.css') }}">
 </head>
 <body>
     {% block content %}{% endblock %}
-    
-    {% block scripts %}
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-    {% endblock %}
 </body>
 </html>

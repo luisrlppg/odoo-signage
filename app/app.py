@@ -7,6 +7,19 @@ import os
 
 app = Flask(__name__)
 
+def format_number(value):
+    """Format a number with thousand separators"""
+    try:
+        # Convert to integer first
+        num = int(float(value))
+        # Format with thousand separators
+        return "{:,}".format(num)
+    except (ValueError, TypeError):
+        return value
+
+# Register the filter with Jinja2
+app.jinja_env.filters['format_number'] = format_number
+
 # Configuración de Odoo
 ODOO_URL = 'http://192.168.1.160:8070/'
 ODOO_DB = 'ppg'
@@ -96,7 +109,7 @@ def format_quantity(quantity):
     return "{:,.2f}".format(quantity).replace(",", "X").replace(".", ",").replace("X", ".")
 
 @app.route('/')
-def vista_agrupada():
+def production_grid():
     try:
         models, uid = connect_odoo()
         if not uid:
@@ -107,37 +120,27 @@ def vista_agrupada():
             return "No hay órdenes de fabricación activas", 404
 
         categories = get_manufac_totals_by_category(models, uid, manufacturing_orders)
-        all_product_ids = []
-        for category in categories.values():
-            all_product_ids.extend(category['total'].keys())
         
-        image_dict = obtener_imagenes_productos(models, uid, all_product_ids)
+        # Determinar qué sección tiene más tarjetas
+        section_counts = {
+            'inyeccion': len(categories['inyeccion']['total']),
+            'ensamble': len(categories['ensamble']['total']),
+            'cepillo': len(categories['cepillo']['total'])
+        }
+        
+        largest_section = max(section_counts.items(), key=lambda x: x[1])[0]
+        
+        return render_template('production_grid.html', 
+                             categories=categories, 
+                             largest_section=largest_section)
+        
+        manufacturing_orders = obtener_ordenes_activas(models, uid)
+        if not manufacturing_orders:
+            return "No hay órdenes de fabricación activas", 404
 
-        # Procesar cada categoría
-        slides_data = {}
-        for category_name, category_data in categories.items():
-            sorted_items = sorted(
-                [{
-                    'name': category_data['names'].get(pid, 'Producto sin nombre'),
-                    'quantity': format_quantity(category_data['total'][pid]),
-                    'image': image_dict.get(pid, ''),
-                    'pid': pid
-                } for pid in category_data['total'].keys()],
-                key=lambda x: float(x['quantity'].replace('.', '').replace(',', '.')),
-                reverse=True
-            )
-            
-            # Agrupar en slides de 10 items
-            group_size = 10
-            slides_data[category_name] = [
-                sorted_items[i:i + group_size] 
-                for i in range(0, len(sorted_items), group_size)
-            ]
-
-        return render_template('vista_agrupada.html', 
-                            slides_ensamble=slides_data['ensamble'],
-                            slides_cepillo=slides_data['cepillo'],
-                            slides_inyeccion=slides_data['inyeccion'])
+        categories = get_manufac_totals_by_category(models, uid, manufacturing_orders)
+        
+        return render_template('production_grid.html', categories=categories)
     except Exception as e:
         app.logger.error(f"Error al procesar las órdenes de fabricación: {e}")
         return f"Error del servidor: {e}", 500
