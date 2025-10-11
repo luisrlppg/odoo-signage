@@ -3,21 +3,22 @@
 {% block content %}
 <div class="list-container">
     <h1 class="list-title">Lista de Producción</h1>
+    
     <form action="{{ url_for('update_display_settings') }}" method="POST" class="settings-form">
-        {% for category_name, items in [('Inyección', categorias.inyeccion),
-                                        ('Ensamble', categorias.ensamble),
-                                        ('Cepillo', categorias.cepillo)] %}
+        
+        {% for cat_name, items in categorias.items() %}
         <div class="category-section">
             <h2 class="category-title">
-                {{ category_name }}
-                <button type="button" class="toggle-all" data-category="{{ category_name|lower }}">Seleccionar Todos</button>
+                {{ cat_name|capitalize }} 
+                <button type="button" class="toggle-all" data-category="{{ cat_name }}">Seleccionar Todos</button>
             </h2>
-            <div class="list-items">
+            <div class="list-items" data-category="{{ cat_name }}">
                 {% for item in items %}
+                {% set pid = item.product_id[0] %}
                 <div class="list-item">
                     <label class="item-checkbox">
-                        <input type="checkbox" name="display_products" value="{{ item.product_id[0] }}"
-                               {% if item.product_id[0] in display_settings %}checked{% endif %}>
+                        <input type="checkbox" name="display_products" value="{{ pid }}"
+                               {% if pid in display_settings %}checked{% endif %}>
                         <span class="checkbox-custom"></span>
                     </label>
                     <span class="item-name">{{ item.product_id[1] }}</span>
@@ -27,6 +28,7 @@
             </div>
         </div>
         {% endfor %}
+        
         <div class="settings-actions">
             <button type="submit" class="save-settings">Guardar Selección</button>
         </div>
@@ -36,12 +38,15 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const toggleButtons = document.querySelectorAll('.toggle-all');
+    
     toggleButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const section = this.closest('.category-section');
+            const category = this.dataset.category;
+            const section = document.querySelector(`.list-items[data-category="${category}"]`);
             const checkboxes = section.querySelectorAll('input[type="checkbox"]');
             const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            checkboxes.forEach(cb => cb.checked = !allChecked);
+            
+            checkboxes.forEach(checkbox => checkbox.checked = !allChecked);
         });
     });
 });
