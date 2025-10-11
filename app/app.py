@@ -131,7 +131,7 @@ def production_grid():
         
         largest_section = max(section_counts.items(), key=lambda x: x[1])[0]
         
-        return render_template('production_grid.html', 
+        return render_template('production_grid.html', body_class='no-scroll', 
                              categories=categories, 
                              largest_section=largest_section)
         
@@ -180,7 +180,7 @@ def list_view():
         # Obtener los productos seleccionados de la sesión
         display_settings = session.get('display_products', [])
         
-        return render_template('list_view.html', 
+        return render_template('list_view.html', body_class='scrollable',
                              categorias=formatted_categorias,
                              display_settings=display_settings)
     except Exception as e:

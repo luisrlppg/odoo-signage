@@ -1,9 +1,5 @@
 {% extends "base.html" %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/production_grid.css') }}">
-{% endblock %}
-
 {% block content %}
 <div class="grid-container">
     {% for section_name, section_id in [('Inyección', 'inyeccion'), ('Ensamble', 'ensamble'), ('Cepillo', 'cepillo')] %}

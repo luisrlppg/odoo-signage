@@ -1,54 +1,12 @@
+<!-- base.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Producción PPG</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/production_grid.css') }}">
-    <script>
-        function adjustFontSize() {
-            const productNames = document.querySelectorAll('.product-name');
-            
-            productNames.forEach(nameElement => {
-                let fontSize = parseFloat(window.getComputedStyle(nameElement).fontSize);
-                const maxHeight = nameElement.parentElement.offsetHeight * 0.5; // 50% del contenedor
-                const container = nameElement.parentElement;
-                
-                // Reset fontSize para medición precisa
-                nameElement.style.fontSize = null;
-                
-                // Ajustar tamaño de fuente si el texto es demasiado grande
-                while (nameElement.offsetHeight > maxHeight && fontSize > 8) {
-                    fontSize -= 0.5;
-                    nameElement.style.fontSize = fontSize + 'px';
-                }
-                
-                // Si el texto es pequeño, intentar aumentarlo
-                while (nameElement.offsetHeight < maxHeight * 0.8 && fontSize < 24) {
-                    fontSize += 0.5;
-                    let prevSize = fontSize - 0.5;
-                    nameElement.style.fontSize = fontSize + 'px';
-                    
-                    // Si se excede la altura, volver al tamaño anterior
-                    if (nameElement.offsetHeight > maxHeight) {
-                        nameElement.style.fontSize = prevSize + 'px';
-                        break;
-                    }
-                }
-            });
-        }
-
-        // Ejecutar cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', adjustFontSize);
-        
-        // Ejecutar cuando la ventana cambie de tamaño
-        window.addEventListener('resize', adjustFontSize);
-        
-        // Ejecutar periódicamente para asegurar el ajuste correcto
-        setInterval(adjustFontSize, 2000);
-    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 </head>
-<body>
+<body class="{{ body_class | default('') }}">
     {% block content %}{% endblock %}
-    <a href="{{ url_for('list_view') }}" class="list-button">Ver Lista</a>
 </body>
 </html>
