@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for, session
 import xmlrpc.client
 from datetime import datetime
 import base64
@@ -6,6 +6,7 @@ import json
 import os
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)  # Necesario para usar session
 
 def format_number(value):
     """Format a number with thousand separators"""
@@ -45,19 +46,6 @@ def obtener_ordenes_activas(models, uid):
         [domain_mrp_active],
         {'fields': fields_mrp}
     )
-
-def obtener_imagenes_productos(models, uid, product_ids):
-    """Obtiene las imágenes de los productos asociados a las órdenes."""
-    image_dict = {}
-    if product_ids:
-        product_images = models.execute_kw(
-            ODOO_DB, uid, ODOO_PASSWORD,
-            'product.product', 'read',
-            [list(product_ids)],
-            {'fields': ['image_1920']}
-        )
-        image_dict = {p['id']: p['image_1920'] for p in product_images if p.get('image_1920')}
-    return image_dict
 
 def get_manufac_totals_by_category(models, uid, manufacturing_orders):
     categories = {
@@ -121,6 +109,19 @@ def production_grid():
 
         categories = get_manufac_totals_by_category(models, uid, manufacturing_orders)
         
+        # Obtener productos seleccionados de la sesión
+        display_products = session.get('display_products', [])
+        
+        # Si hay productos seleccionados, filtrar las categorías
+        if display_products:
+            for category in categories.values():
+                filtered_total = {pid: qty for pid, qty in category['total'].items() 
+                               if pid in display_products}
+                filtered_names = {pid: name for pid, name in category['names'].items() 
+                                if pid in display_products}
+                category['total'] = filtered_total
+                category['names'] = filtered_names
+        
         # Determinar qué sección tiene más tarjetas
         section_counts = {
             'inyeccion': len(categories['inyeccion']['total']),
@@ -130,7 +131,7 @@ def production_grid():
         
         largest_section = max(section_counts.items(), key=lambda x: x[1])[0]
         
-        return render_template('production_grid.html', 
+        return render_template('production_grid.html', body_class='no-scroll', 
                              categories=categories, 
                              largest_section=largest_section)
         
@@ -144,6 +145,61 @@ def production_grid():
     except Exception as e:
         app.logger.error(f"Error al procesar las órdenes de fabricación: {e}")
         return f"Error del servidor: {e}", 500
+
+@app.route('/list')
+def list_view():
+    try:
+        models, uid = connect_odoo()
+        orders = obtener_ordenes_activas(models, uid)
+        
+        if not orders:
+            return "No hay órdenes de fabricación activas", 404
+            
+        # Usar la función existente para clasificar órdenes
+        categorias = get_manufac_totals_by_category(models, uid, orders)
+        
+        # Convertir el formato de datos para que coincida con la plantilla
+        formatted_categorias = {
+            'inyeccion': [
+                {'product_id': (pid, categorias['inyeccion']['names'][pid]), 
+                 'product_qty': qty} 
+                for pid, qty in categorias['inyeccion']['total'].items()
+            ],
+            'ensamble': [
+                {'product_id': (pid, categorias['ensamble']['names'][pid]), 
+                 'product_qty': qty} 
+                for pid, qty in categorias['ensamble']['total'].items()
+            ],
+            'cepillo': [
+                {'product_id': (pid, categorias['cepillo']['names'][pid]), 
+                 'product_qty': qty} 
+                for pid, qty in categorias['cepillo']['total'].items()
+            ]
+        }
+        
+        # Obtener los productos seleccionados de la sesión
+        display_settings = session.get('display_products', [])
+        
+        return render_template('list_view.html', body_class='scrollable',
+                             categorias=formatted_categorias,
+                             display_settings=display_settings)
+    except Exception as e:
+        app.logger.error(f"Error en list_view: {e}")
+        return f"Error: {str(e)}", 500
+
+@app.route('/update-display', methods=['POST'])
+def update_display_settings():
+    try:
+        # Obtener los IDs de productos seleccionados
+        selected_products = request.form.getlist('display_products')
+        
+        # Guardar en la sesión
+        session['display_products'] = [int(pid) for pid in selected_products]
+        
+        return redirect(url_for('production_grid'))
+    except Exception as e:
+        app.logger.error(f"Error actualizando configuración: {e}")
+        return f"Error: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
