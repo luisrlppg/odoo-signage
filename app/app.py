@@ -6,7 +6,30 @@ import json
 import os
 
 app = Flask(__name__)
+
 app.secret_key = os.urandom(24)  # Necesario para usar session
+
+# Archivo para guardar la selección de productos
+DISPLAY_FILE = os.path.join(os.path.dirname(__file__), 'display_products.json')
+
+def save_display_products(product_ids):
+    """Guardar IDs de productos en archivo JSON."""
+    try:
+        with open(DISPLAY_FILE, 'w') as f:
+            json.dump([int(pid) for pid in product_ids], f)
+    except Exception as e:
+        app.logger.error(f"Error guardando display_products.json: {e}")
+
+def load_display_products():
+    """Cargar IDs de productos desde archivo JSON."""
+    if os.path.exists(DISPLAY_FILE):
+        try:
+            with open(DISPLAY_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            app.logger.error(f"Error leyendo display_products.json: {e}")
+            return []
+    return []
 
 def format_number(value):
     """Format a number with thousand separators"""
@@ -100,89 +123,58 @@ def format_quantity(quantity):
 def production_grid():
     try:
         models, uid = connect_odoo()
-        if not uid:
-            return "Error de autenticación con Odoo", 500
-        
         manufacturing_orders = obtener_ordenes_activas(models, uid)
-        if not manufacturing_orders:
-            return "No hay órdenes de fabricación activas", 404
-
         categories = get_manufac_totals_by_category(models, uid, manufacturing_orders)
+
+        # Cargar productos seleccionados desde JSON
+        display_products = load_display_products()
         
-        # Obtener productos seleccionados de la sesión
-        display_products = session.get('display_products', [])
-        
-        # Si hay productos seleccionados, filtrar las categorías
+        # Filtrar según selección
         if display_products:
             for category in categories.values():
-                filtered_total = {pid: qty for pid, qty in category['total'].items() 
-                               if pid in display_products}
-                filtered_names = {pid: name for pid, name in category['names'].items() 
-                                if pid in display_products}
-                category['total'] = filtered_total
-                category['names'] = filtered_names
-        
-        # Determinar qué sección tiene más tarjetas
-        section_counts = {
-            'inyeccion': len(categories['inyeccion']['total']),
-            'ensamble': len(categories['ensamble']['total']),
-            'cepillo': len(categories['cepillo']['total'])
-        }
-        
-        largest_section = max(section_counts.items(), key=lambda x: x[1])[0]
-        
-        return render_template('production_grid.html', body_class='no-scroll', 
-                             categories=categories, 
-                             largest_section=largest_section)
-        
-        manufacturing_orders = obtener_ordenes_activas(models, uid)
-        if not manufacturing_orders:
-            return "No hay órdenes de fabricación activas", 404
+                category['total'] = {pid: qty for pid, qty in category['total'].items() if pid in display_products}
+                category['names'] = {pid: name for pid, name in category['names'].items() if pid in display_products}
 
-        categories = get_manufac_totals_by_category(models, uid, manufacturing_orders)
-        
-        return render_template('production_grid.html', categories=categories)
+        # Determinar qué sección es la más grande
+        section_counts = {k: len(v['total']) for k, v in categories.items()}
+        largest_section = max(section_counts.items(), key=lambda x: x[1])[0]
+
+        return render_template('production_grid.html',
+                               categories=categories,
+                               largest_section=largest_section)
     except Exception as e:
         app.logger.error(f"Error al procesar las órdenes de fabricación: {e}")
         return f"Error del servidor: {e}", 500
-
 @app.route('/list')
 def list_view():
     try:
+        # Conectarse a Odoo y obtener categorías como antes
         models, uid = connect_odoo()
         orders = obtener_ordenes_activas(models, uid)
-        
-        if not orders:
-            return "No hay órdenes de fabricación activas", 404
-            
-        # Usar la función existente para clasificar órdenes
         categorias = get_manufac_totals_by_category(models, uid, orders)
-        
-        # Convertir el formato de datos para que coincida con la plantilla
+
+        # Convertir formato para la plantilla
         formatted_categorias = {
             'inyeccion': [
-                {'product_id': (pid, categorias['inyeccion']['names'][pid]), 
-                 'product_qty': qty} 
+                {'product_id': (pid, categorias['inyeccion']['names'][pid]), 'product_qty': qty}
                 for pid, qty in categorias['inyeccion']['total'].items()
             ],
             'ensamble': [
-                {'product_id': (pid, categorias['ensamble']['names'][pid]), 
-                 'product_qty': qty} 
+                {'product_id': (pid, categorias['ensamble']['names'][pid]), 'product_qty': qty}
                 for pid, qty in categorias['ensamble']['total'].items()
             ],
             'cepillo': [
-                {'product_id': (pid, categorias['cepillo']['names'][pid]), 
-                 'product_qty': qty} 
+                {'product_id': (pid, categorias['cepillo']['names'][pid]), 'product_qty': qty}
                 for pid, qty in categorias['cepillo']['total'].items()
             ]
         }
-        
-        # Obtener los productos seleccionados de la sesión
-        display_settings = session.get('display_products', [])
-        
-        return render_template('list_view.html', body_class='scrollable',
-                             categorias=formatted_categorias,
-                             display_settings=display_settings)
+
+        # Cargar productos seleccionados desde JSON
+        display_settings = load_display_products()
+
+        return render_template('list_view.html',
+                               categorias=formatted_categorias,
+                               display_settings=display_settings)
     except Exception as e:
         app.logger.error(f"Error en list_view: {e}")
         return f"Error: {str(e)}", 500
@@ -193,8 +185,8 @@ def update_display_settings():
         # Obtener los IDs de productos seleccionados
         selected_products = request.form.getlist('display_products')
         
-        # Guardar en la sesión
-        session['display_products'] = [int(pid) for pid in selected_products]
+        # Guardar en JSON
+        save_display_products(selected_products)
         
         return redirect(url_for('production_grid'))
     except Exception as e:
