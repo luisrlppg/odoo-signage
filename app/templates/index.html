@@ -5,6 +5,41 @@
     <title>Generador de Etiquetas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+    .searchable-dropdown {
+      position: relative;
+      width: 100%;
+    }
+    
+    .dropdown-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .dropdown-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .dropdown-item:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .dropdown-item.selected {
+      background-color: #007bff;
+      color: white;
+    }
+    </style>
 </head>
 <body>
   <div class="container">
@@ -25,11 +60,15 @@
       </div>
       <div class="form-section form-cliente">
         <label>Cliente:</label>
-        <select name="cliente" required>
-          {% for c in clientes %}
-          <option value="{{ c.id }}">{{ c.name }}</option>
-          {% endfor %}
-        </select>
+        <div class="searchable-dropdown">
+          <input type="text" id="cliente-search" placeholder="Buscar cliente..." autocomplete="off" required>
+          <input type="hidden" name="cliente" id="cliente-value" required>
+          <div id="cliente-dropdown" class="dropdown-list">
+            {% for c in clientes %}
+            <div class="dropdown-item" data-value="{{ c.id }}">{{ c.name }}</div>
+            {% endfor %}
+          </div>
+        </div>
         <label for="cliente_name">Nombre cliente (opcional):</label>
         <input type="text" id="cliente_name" name="cliente_name" placeholder="Sobrescribe el nombre del cliente">
         <label for="cliente_phone">Teléfono cliente (opcional):</label>
@@ -41,11 +80,15 @@
       </div>
       <div class="form-section form-producto">
         <label>Producto:</label>
-        <select name="producto" required>
-          {% for p in productos %}
-          <option value="{{ p.id }}">{{ p.display_name }}</option>
-          {% endfor %}
-        </select>
+        <div class="searchable-dropdown">
+          <input type="text" id="producto-search" placeholder="Buscar producto..." autocomplete="off" required>
+          <input type="hidden" name="producto" id="producto-value" required>
+          <div id="producto-dropdown" class="dropdown-list">
+            {% for p in productos %}
+            <div class="dropdown-item" data-value="{{ p.id }}">{{ p.display_name }}</div>
+            {% endfor %}
+          </div>
+        </div>
         <label for="producto_name">Nombre producto (opcional):</label>
         <input type="text" id="producto_name" name="producto_name" placeholder="Sobrescribe el nombre del producto">
         <label for="producto_image">Imagen producto (opcional):</label>
@@ -90,9 +133,62 @@
         }
       });
     }
-    window.onload = function() {
+
+    // Searchable dropdown functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      // Function to setup searchable dropdown
+      function setupSearchableDropdown(searchId, hiddenId, dropdownId) {
+        const searchInput = document.getElementById(searchId);
+        const hiddenInput = document.getElementById(hiddenId);
+        const dropdown = document.getElementById(dropdownId);
+        const items = dropdown.querySelectorAll('.dropdown-item');
+
+        searchInput.addEventListener('input', function() {
+          const filter = this.value.toLowerCase();
+          let hasVisible = false;
+          
+          items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (text.includes(filter)) {
+              item.style.display = 'block';
+              hasVisible = true;
+            } else {
+              item.style.display = 'none';
+            }
+          });
+          
+          dropdown.style.display = hasVisible ? 'block' : 'none';
+          hiddenInput.value = '';
+        });
+
+        searchInput.addEventListener('focus', function() {
+          dropdown.style.display = 'block';
+        });
+
+        items.forEach(item => {
+          item.addEventListener('click', function() {
+            searchInput.value = this.textContent;
+            hiddenInput.value = this.dataset.value;
+            dropdown.style.display = 'none';
+          });
+        });
+      }
+
+      // Setup both dropdowns
+      setupSearchableDropdown('cliente-search', 'cliente-value', 'cliente-dropdown');
+      setupSearchableDropdown('producto-search', 'producto-value', 'producto-dropdown');
+
+      // Close dropdowns when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.searchable-dropdown')) {
+          document.querySelectorAll('.dropdown-list').forEach(dropdown => {
+            dropdown.style.display = 'none';
+          });
+        }
+      });
+
       toggleHeaderFields();
-    };
+    });
     </script>
     </div>
 </body>

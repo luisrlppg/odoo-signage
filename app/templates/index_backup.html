@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Etiquetas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+  <h1>Generar etiqueta</h1>
+  <form method="post" enctype="multipart/form-data">
+    <div class="form-grid">
+      <div class="form-section form-header">
+        <input type="checkbox" id="edit_header" name="edit_header" value="1" onchange="toggleHeaderFields()">
+        <label for="edit_header">Editar campos del encabezado</label>
+        <label for="header_text">Título principal (opcional):</label>
+        <input type="text" id="header_text" name="header_text" placeholder="Plásticos Plasa de Guadalajara">
+        <label for="empresa_direccion">Dirección empresa (opcional):</label>
+        <input type="text" id="empresa_direccion" name="empresa_direccion" placeholder="Calle Florentino Acosta #1090">
+        <label for="empresa_ciudad">Ciudad y CP empresa (opcional):</label>
+        <input type="text" id="empresa_ciudad" name="empresa_ciudad" placeholder="Guadalajara, Jalisco   C.P.44329">
+        <label for="empresa_contacto">Contacto empresa (opcional):</label>
+        <input type="text" id="empresa_contacto" name="empresa_contacto" placeholder="Teléfono: 33-3651-5424    www.plasticosplasa.com">
+      </div>
+      <div class="form-section form-cliente">
+        <label>Cliente:</label>
+        <select name="cliente" required>
+          {% for c in clientes %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        <label for="cliente_name">Nombre cliente (opcional):</label>
+        <input type="text" id="cliente_name" name="cliente_name" placeholder="Sobrescribe el nombre del cliente">
+        <label for="cliente_phone">Teléfono cliente (opcional):</label>
+        <input type="text" id="cliente_phone" name="cliente_phone" placeholder="Sobrescribe el teléfono">
+        <label for="cliente_address">Dirección cliente (opcional):</label>
+        <input type="text" id="cliente_address" name="cliente_address" placeholder="Sobrescribe la dirección">
+        <label for="cliente_email">Email cliente (opcional):</label>
+        <input type="text" id="cliente_email" name="cliente_email" placeholder="Sobrescribe el email">
+      </div>
+      <div class="form-section form-producto">
+        <label>Producto:</label>
+        <select name="producto" required>
+          {% for p in productos %}
+          <option value="{{ p.id }}">{{ p.display_name }}</option>
+          {% endfor %}
+        </select>
+        <label for="producto_name">Nombre producto (opcional):</label>
+        <input type="text" id="producto_name" name="producto_name" placeholder="Sobrescribe el nombre del producto">
+        <label for="producto_image">Imagen producto (opcional):</label>
+        <input type="file" id="producto_image" name="producto_image" accept="image/*">
+      </div>
+      <div class="form-section form-datos">
+        <label for="cantidad">Cantidad:</label>
+        <input type="text" id="cantidad" name="cantidad" placeholder="Ingresa la cantidad">
+        <label for="peso_bruto">Peso bruto:</label>
+        <input type="text" id="peso_bruto" name="peso_bruto" placeholder="Kg">
+        <label for="peso_neto">Peso neto:</label>
+        <input type="text" id="peso_neto" name="peso_neto" placeholder="Kg">
+        <label for="peso_unitario">Peso unitario:</label>
+        <input type="text" id="peso_unitario" name="peso_unitario" placeholder="Kg">
+      </div>
+      <div class="form-section form-footer">
+        <label for="footer_text">Texto pie de página:</label>
+        <input type="text" id="footer_text" name="footer_text" placeholder="Generado por Plásticos Plasa - Etiqueta personalizada">
+      </div>
+    </div>
+    <button type="submit">Generar PDF</button>
+  </form>
+    <script>
+    function toggleHeaderFields() {
+      var checked = document.getElementById('edit_header').checked;
+      var fields = [
+        'header_text',
+        'empresa_direccion',
+        'empresa_ciudad',
+        'empresa_contacto'
+      ];
+      fields.forEach(function(id) {
+        var el = document.getElementById(id);
+        el.disabled = !checked;
+        if (checked) {
+          el.placeholder = '';
+        } else {
+          if (id === 'header_text') el.placeholder = 'Plásticos Plasa de Guadalajara';
+          if (id === 'empresa_direccion') el.placeholder = 'Calle Florentino Acosta #1090';
+          if (id === 'empresa_ciudad') el.placeholder = 'Guadalajara, Jalisco   C.P.44329';
+          if (id === 'empresa_contacto') el.placeholder = 'Teléfono: 33-3651-5424    www.plasticosplasa.com';
+        }
+      });
+    }
+    window.onload = function() {
+      toggleHeaderFields();
+    };
+    </script>
+    </div>
+</body>
+</html>
